@@ -475,6 +475,11 @@ ax = y_train_res.value_counts().plot.pie(autopct='2%f')
 _ = ax.set_title("Combined_sampling")
 ```
 
+Gráfico com os dados balanceados:
+![smote](https://github.com/germanojorge/PrevendoUtilidadeComentarios/blob/main/public/graficosmote.JPG)
+
+
+
 ### 12. Treinar o modelo de Classificação
 
 ```r
@@ -525,6 +530,14 @@ print("The Root mean squared error (RMSE) on test set: {:.4f}".format(rmse))
 
 > A raiz do erro quadrático médio atingiu valores de 0.09.
 
+```r
+y_pred = reg.predict(X_test)
+df_preds = pd.DataFrame({'Actual': y_test.squeeze(), 'Predicted': y_pred.squeeze()})
+print(df_preds)
+```
+Se rodarmos um teste de predição, veremos que os valores são parecidos.
+
+![reg2](https://github.com/germanojorge/PrevendoUtilidadeComentarios/blob/main/public/predict.JPG)
 
 
 ### 14. Verificar a importância dos atributos
@@ -536,7 +549,10 @@ feat_imp_reg = pd.DataFrame(reg.feature_importances_)
 
 feat_imp_class.nlargest(n=10, columns=[0])
 feat_imp_reg.nlargest(n=10, columns=[0])
+```
 
+Faremos um dataframe para a importância das features de CLASSIFICAÇÃO
+```
 transposto = features.transpose()
 lista_index = [transposto.index]
 index_df = pd.DataFrame(lista_index)
@@ -553,3 +569,9 @@ classfeat = df_valor_feat_class.nlargest(n=10, columns=['valor'])
 classfeat
 sns.barplot(data=classfeat, x='valor', y='feature',)
 ``` 
+![reg](https://github.com/germanojorge/PrevendoUtilidadeComentarios/blob/main/public/grafico.JPG)
+
+O gráfico nos indica que os atributos mais importantes para a predição de utilidade são
+-   Atributos de metadados
+-   Atributos de vetores de documento (Doc2Vec)
+-   Atributos baseados em modelagem de tópico (LDA)
