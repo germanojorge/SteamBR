@@ -13,6 +13,20 @@ Nossos Objetivos:
 
 > Investigar quais atributos tornam um comentário útil.
 
+Ferramentas Utilizadas:
+---------
+- Python
+- Pandas
+- Sckit-learn
+- Numpy
+- Gensim
+- Embeddings
+- LDA (Latent Dirichlet Allocation)
+- LIWC
+- NLTK
+- Matplotlib
+- Seaborn
+
 
 Explicação dos arquivos:
 ------------------------
@@ -502,7 +516,6 @@ print(classification_report(y_test, model_prediction))
 ![classifc](https://github.com/germanojorge/PrevendoUtilidadeComentarios/blob/main/public/acc_class.JPG)
 
 > Nosso modelo atingiu uma acurácia de 84%, e previu corretamente a classe 1 em 91%
-```
 
 
 ### 13. Treinar o modelo de Regressão
@@ -539,6 +552,7 @@ Se rodarmos um teste de predição, veremos que os valores são parecidos.
 
 ![reg2](https://github.com/germanojorge/PrevendoUtilidadeComentarios/blob/main/public/predict.JPG)
 
+--------------------------------------
 
 ### 14. Verificar a importância dos atributos
 
@@ -552,7 +566,7 @@ feat_imp_reg.nlargest(n=10, columns=[0])
 ```
 
 Faremos um dataframe para a importância das features de CLASSIFICAÇÃO
-```
+```r
 transposto = features.transpose()
 lista_index = [transposto.index]
 index_df = pd.DataFrame(lista_index)
