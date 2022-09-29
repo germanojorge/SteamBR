@@ -25,11 +25,12 @@ Explicação dos arquivos:
 
  -  **LIWC2007_Portugues_win (1).dic:** Dicionário que contém palavras que revelam determinados sentimentos e opiniões (Balage Filho et al., 2013, Pennebaker et al., 2001)
 
-How to reproduce the result:
+Como reproduzir o resultado:
 ----------------------------
-
--   Download the repository from <https://github.com/baowaly/PredictingReviewHelpfulness>
--   I have already ranked the features and saved in the directory 'Features'. You may also execute the script feature\_ranking.R to check how it works.
+obs: neste exemplo usaremos o Google Colab. Contudo, este procedimento pode ser reproduzido no Jupyter Notebooks com algumas alterações.
+-   Baixe o repositório em <https://github.com/germanojorge/PrevendoUtilidadeComentarios>. Clique em "código" -> "download ZIP".
+-   Mova os arquivos para seu drive em <https://drive.google.com>. Certifique-se de movê-los para um caminho que você possa lembrar posteriormente.
+-   Inicie sua sessão em <https://colab.research.google.com>
 -   Execute the script: gbm\_eval.R
 
 Tutorial of model training and evaluation:
