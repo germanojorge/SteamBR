@@ -24,15 +24,17 @@ Explicação dos arquivos:
  -  **meu_lda:** Modelo de Latent Dirichlet Allocation (LDA) já treinado. Um modelo estatístico para a descoberta de tópicos abstratos. Blei DM, Ng AY, Jordan MI (2003)
 
  -  **LIWC2007_Portugues_win (1).dic:** Dicionário que contém palavras que revelam determinados sentimentos e opiniões (Balage Filho et al., 2013, Pennebaker et al., 2001)
+ - **predUtil_h05_Racing.ipynb:** Script do código em formato de python notebook para a criação do algoritmo. Será utilizado como exemplo no tutorial.
 
 Como reproduzir o resultado:
 ----------------------------
-obs: neste exemplo usaremos o Google Colab. Contudo, este procedimento pode ser reproduzido no Jupyter Notebooks com algumas alterações.
--   Baixe o repositório em <https://github.com/germanojorge/PrevendoUtilidadeComentarios>. Clique em "código" -> "download ZIP".
+obs: Neste exemplo usaremos o Google Colab. Contudo, este procedimento pode ser reproduzido no Jupyter Notebooks com algumas alterações.
+-   Baixe o repositório em <https://github.com/germanojorge/PrevendoUtilidadeComentarios>. Clique em "código" -> "download ZIP". Em seguida, descompacte-o.
 -   Mova os arquivos para seu drive em <https://drive.google.com>. Certifique-se de movê-los para um caminho que você possa lembrar posteriormente.
 -   Inicie sua sessão em <https://colab.research.google.com>
--   Execute the script: gbm\_eval.R
-
+-   No canto superior esquerdo, clique em "arquivo" -> "abrir notebook" e procure ou faça o upload do notebook *predUtil_h05_Racing.ipynb* contido neste repositório do github.
+-   Procure no código por caminhos como *path = '/content/drive/MyDrive/Action_json_part50.json'* e certifique-se de alterá-los para o local em que você depositou seus arquivos no drive anteriormente.
+-  Execute o script
 Tutorial of model training and evaluation:
 ------------------------------------------
 
