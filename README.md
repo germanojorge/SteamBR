@@ -39,375 +39,496 @@ Como reproduzir o resultado:
 Tutorial de treinamento e avaliação do modelo:
 ------------------------------------------
 
-On the steam store there are many game genres e.g. action, racing, survival, rpg etc. We have analysed top 10 game genres that are discussed and explained in the paper. In this case, we are investigating the helpfulness of Racing game genre and showing the process to reproduce its result. We have considered those reviews which have at least 50 votes. The following step by step explanation are from the script **gbm\_eval.R.**
+Neste tutorial vamos investigar a utilidade de comentários no gênero Racing. Foram considerados apenas os comentários com número de votos maior ou igual a 3. O passo-a-passo a seguir é feito utilizando o script **predUtil_h05_Racing.ipynb**.
+
+
+### 1. Carregar as Bibliotecas
+``` python
+from google.colab import drive
+drive.mount('/content/drive')
+!pip install unidecode
+from unidecode import unidecode
+import string
+import liwc
+import pandas as pd
+import numpy as np
+import glob
+import re
+from collections import Counter
+import nltk
+nltk.download('punkt')
+nltk.download('stopwords')
+nltk.download('rslp')
+from nltk.tokenize import word_tokenize
+from nltk.tokenize import sent_tokenize
+from nltk.stem.porter import *
+from nltk.corpus import stopwords
+!pip install -U gensim
+import gensim
+from gensim.models import KeyedVectors
+import gensim.corpora as corpora
+from gensim.utils import simple_preprocess
+from gensim.models import CoherenceModel
+from gensim.models.ldamulticore import LdaMulticore
+from gensim.models.doc2vec import TaggedDocument
+from gensim.models.doc2vec import Doc2Vec
+from sklearn.model_selection import train_test_split
+from imblearn.combine import SMOTEENN
+from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.model_selection import GridSearchCV
+from sklearn.metrics import roc_auc_score
+from sklearn.metrics import accuracy_score, classification_report
+from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.metrics import mean_squared_error
+import matplotlib.pyplot as plt
+import seaborn as sns
+```
+Clique em "aceitar" para e coloque suas credencias para montar o seu drive.
+
+### 2. Preparar o Doc2Vec
+
+OBS: SE VOCÊ NÃO DESEJA TREINAR SEU PRÓPRIO DOC2VEC, PULE ESTA ETAPA.
 
 ``` r
-#Define some variables
-genre <- "Racing"
-vote_num <- 50
+#lê o arquivo de gêneros combinados
+path = '/content/drive/MyDrive/Combined_json_part50.json'
+df = pd.read_json(path)
 ```
 
-### 1. Load dataset
-
 ``` r
-#load dataset 
-dataFile <- paste0("Dataset/Reviews_", genre ,"_50.Rdata")
-if(!file.exists(dataFile) || file.size(dataFile) == 0){
-  stop("Data file doesn't exist")
-}
-load(dataFile)
-original_dataset <- ds.reviews
+#preprocessamento
+from nltk.corpus import stopwords
+def process_text(text):
+  text = text.lower().replace('\n', ' ').replace('\r', '').strip()
+  text = re.sub(' +',' ',text)
+  text = re.sub(r'[^\w\s]','',text)
+  text = re.sub('[0-9]+', '', text)
+
+  stop_words = set(stopwords.words('portuguese'))
+  word_tokens = word_tokenize(text)
+  filtered_sentence = [w for w in word_tokens if not w in stop_words]
+
+
+
+
+  text = ' '.join(filtered_sentence)
+  return text
 ```
 
-### 2. Summarize dataset
-
-Now it is time to take a look at the data
-
 ``` r
-# dimensions of dataset
-dim(original_dataset)
+df = df['review'].dropna().apply(process_text) #tira os NaN e processa o texto
 ```
 
-    ## [1] 2251 2205
-
-You can see 2251 reviews and 2205 attributes in the original dataset of Racing genre.
-
-### 3. Add target variable/column
-
-Steam helpfulness (target variable) of a review is defined by the rating score (here, ws.score) of that review.
-<!--- The rating score of a particular review is computed taking the lower bound of Wilson scoreconfidence interval for a Binomial parameter. In this case, we have used an R function "binom.confint" from the "binom" package.
-
 ``` r
-##calculate Wilson score (rating)
-##x represents the number of people who feel the review is helpful (Yes votes)
-##n represents the total number of votes (i.e. sum of Yes and No votes)
-original_dataset$ws.score <- binom.confint(x=original_dataset$vote.agree, n=original_dataset$vote.total, conf.level = 0.95, methods=c("wilson"))$lower
-``` -->
-Now depending on a score threshold (0.90) we defined our target variable helpful as follows:
-
-``` r
-##Add a helpful column
-score_thrsld <- 0.90
-original_dataset$helpful <- ifelse(original_dataset$ws.score > score_thrsld, "Yes", "No")
-original_dataset$helpful <- as.factor(original_dataset$helpful)
-dim.y <- "helpful"
+#define uma função para taggear os documentos para utiliza-los no doc2vec
+def tagged_document(list_of_list_of_words):
+  for i, list_of_words in enumerate(list_of_list_of_words):
+    yield gensim.models.doc2vec.TaggedDocument(list_of_words, [i])
+data_for_training = list(tagged_document(df))
 ```
 
-### 4. Feature Selection
-
-After doing the feature ranking (Rscript feature\_ranking.R), we have total **1789** features that as shown in the following table. Some insignificant features are removed during the ranking process.
-
-<table style="width:100%;">
-<colgroup>
-<col width="13%" />
-<col width="28%" />
-<col width="57%" />
-</colgroup>
-<thead>
-<tr class="header">
-<th>Feature Type</th>
-<th>Examples</th>
-<th>Explanation</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>Metadata (39)</td>
-<td>e.g. recommend, days.interval, #words, #sentences</td>
-<td>Text, Reviewer, Game metadata. Counting, Aggregating, Ratio variables</td>
-</tr>
-<tr class="even">
-<td>LIWC (93)</td>
-<td>liwc.* (e.g. liwc.Segment, liwc.WC, liwc.Analytic, liwc.Tone)</td>
-<td>Linguistic Inquiry and Word Count (LIWC) reads a given text and counts the percentage of words that reflect different emotions, thinking styles, social concerns, and even parts of speech</td>
-</tr>
-<tr class="odd">
-<td>TF-IDF (629)</td>
-<td>tfidf.* (e.g. tfidf.die, tfidf.easy, tfidf.better, tfidf.bad)</td>
-<td>Unigram term-weighting method used to extract features based on the word frequencies in the review and review corpus</td>
-</tr>
-<tr class="even">
-<td>LDA (28)</td>
-<td>topic.* (e.g. topic.1, topic.2, topic.3)</td>
-<td>Topic based features induced from review corpus</td>
-</tr>
-<tr class="odd">
-<td>Word2Vec (1000)</td>
-<td>wv.* (e.g. wv.1, wv.2, wv.3, wv.4)</td>
-<td>Word2vec, a group of related models that are used to produce word embeddings features from the text</td>
-</tr>
-</tbody>
-</table>
-
 ``` r
-#Load feature file
-featureFile <- paste0("Features/FT_", genre, "_V", vote_num, "_R", score_thrsld,"_S25.Rdata")
-if(!file.exists(featureFile)){
-  stop("\nFeature File Not Exists!!")
-}
-load(featureFile)
-
-#Total number of features
-max.dims <- NROW(feature.rank)
-print(max.dims)
+model_dbow= gensim.models.doc2vec.Doc2Vec(vector_size=1000, min_count=2, epochs=30) #estabelece os parametros
+model_dbow.build_vocab(data_for_training) #constroi o vocabulario para o modelo
+model_dbow.train(data_for_training, total_examples=model_dbow.corpus_count, epochs=model_dbow.epochs) #treina o modelo
 ```
 
-    ## [1] 1789
+``` r
+fname = '/content/drive/MyDrive/meu_doc2vec'
+model_dbow.save(fname) #salva o modelo
+````
+
+
+### 3. Carregar o Doc2Vec pronto
 
 ``` r
-#Total feature list
-dim.x <- feature.rank[order(feature.rank$total)[1:max.dims],]$name
+fname = '/content/drive/MyDrive/meu_doc2vec'
+model_dbow = Doc2Vec.load(fname)
+````
+### 4. Pré-processamento
 
-#Exclude tfidf features, we found there are not important at all
-dim.x <- grep("^tfidf.*?", dim.x, value = TRUE,  invert = TRUE)
-dataset <- original_dataset[, c(dim.x, dim.y), with=F]
-#Peek at the Data   
-head(dataset[,1:5], 5)
+``` r
+#carrega o arquivo
+path2 = '/content/drive/MyDrive/Tese/Racing_json_rest_part_50.json'
+df2 = pd.read_json(path2)
+```
+``` r
+#preprocessamento
+def process_text(text):
+  text = text.lower().replace('\n', ' ').replace('\r', '').strip()
+  text = re.sub(' +',' ',text)
+  text = re.sub(r'[^\w\s]','',text)
+  text = re.sub('[0-9]+', '', text)
+
+  stop_words = set(stopwords.words('portuguese'))
+  word_tokens = word_tokenize(text)
+  filtered_sentence = [w for w in word_tokens if not w in stop_words]
+  
+  text = ' '.join(filtered_sentence)
+  return text
 ```
 
-    ##    recommend   topic.17     wv.613     wv.367     wv.638
-    ## 1:         0 0.04912281 -0.0196526 0.00585691 0.00564988
-    ## 2:         0 0.04204204 -0.0181740 0.00550578 0.00636852
-    ## 3:         0 0.04301075 -0.0237652 0.00789483 0.01222250
-    ## 4:         1 0.02873563 -0.0156660 0.00388676 0.01468580
-    ## 5:         1 0.02487562 -0.0175165 0.00381155 0.00345860
-
-We did an investigation with a smaller sample size (50% of the dataset) taking the upper limit of feature size by 1000. The results are displayed in the following Figure.
-
-<img src="figure/feature_score.png" title="F-score by number of features" alt="F-score by number of features" style="display: block; margin: auto;" /> 
-
-From the above plot of F-score against number of feature, we can clearly see that the best F-scores of the dataset were found when the number of features were 840.
-
 ``` r
-#Select number of features
-gbm.dim <- 840
-#Selec the best subset of the total features
-gbm.dim.x <- dim.x[1:gbm.dim]
+#transforma a coluna weighted vote score que era string em float para utilizar no algoritmo
+df2 = df2.astype({'weighted_vote_score': float}, errors='raise')
+```
+``` r
+#cria uma coluna de utilidade com score maior do que 0.5
+df2['Helpful'] = np.where(df2['weighted_vote_score'] > 0.5, True, False)
+
+data = pd.DataFrame() #cria um dataframe
+
+
+data['Text'] = df2['review'].dropna().apply(process_text) #tira os NaN e preprocessa o texto
+
+data['Helpful'] = df2['Helpful']
 ```
 
-### 5. Balance the dataset
-
-Let’s now take a look at the number of instances (rows) that belong to each class and balance the dataset.
-
 ``` r
-#Total number of rows in the dataset
-n.rows <- NROW(dataset)
-#Class Distribution
-print(table(dataset$helpful))
+stop_words = nltk.corpus.stopwords.words('portuguese')
+
+def remove_stopwords(text,stop_words):
+  
+  # tudo para caixa baixa
+  s = str(text).lower() 
+
+  tokens = word_tokenize(s)
+
+  # remove stopwords, dígitos, caracteres especiais e pontuações
+  v = [word for word in tokens if not word in stop_words and word.isalnum() and not word.isdigit()]
+
+  return v
+  
+df2 = data['Text']
+
+textolimpo= df2.apply(lambda x:remove_stopwords(x, stop_words))
+textolimpo
+
+textolimpo.reset_index(drop=True, inplace=True)
+```
+``` r
+#cria uma lista contendo vetores inferidos a partir do doc2vec treinado
+a = []
+for i in textolimpo:
+  b = model_dbow.infer_vector(i)
+  a.append(b)
+  
+b = np.array(a) #transforma a lista num numpy array  
+vetores = pd.DataFrame(b)
+
+l = []
+for i in range(1,1001):
+  l.append(str('wv.'+ str(i)))
+l
+
+vetores.columns= l #transforma a lista de vetores em colunas no dataframe
 ```
 
-    ## 
-    ##   No  Yes 
-    ## 2187   64
-
-Creates possibly balanced samples by random over-sampling minority examples, under-sampling majority examples or combination of over- and under-sampling.
 
 ``` r
-#Balance data set with both over and under sampling
-n.samplePercent <- 100
-n.sampleSize <- ceiling(n.rows * n.samplePercent/100)
-balanced_data <- ovun.sample(helpful ~ ., data = dataset, method="both", p=0.5, N=n.sampleSize)$data
-print(table(balanced_data$helpful))
+vetores
 ```
 
-    ## 
-    ##   No  Yes 
-    ## 1105 1146
-
-### 6. Partition into training and test dataset
-
-Partition dataset into training (80%) and test (20%).
-
 ``` r
-#Split dataset
-split <- 0.80
-trainIndex <- as.vector(createDataPartition(y=balanced_data$helpful, p=split, list=FALSE))
-
-#Get train data
-gbm.dataTrain <- balanced_data[trainIndex, c(gbm.dim.x,dim.y), ]
-dim(gbm.dataTrain)
+dataframe = pd.DataFrame()
+data.reset_index(drop=True, inplace=True) #tira o indice do dataframe criado anteriormente
+resultfinal = pd.concat([data, vetores], axis=1, join='inner') #junta os dois dataframes
 ```
 
-    ## [1] 1801  841
-
-``` r
-#Get test data
-gbm.dataTest <- balanced_data[-trainIndex, c(gbm.dim.x,dim.y), ]
-dim(gbm.dataTest)
+```
+resultfinal
 ```
 
-    ## [1] 450 841
+
+
+### 5. Preparar o LDA
+OBS: CASO NÃO DESEJE PREPARAR SEU PRÓPRIO LDA, PULE ESTA ETAPA
 
 ``` r
-#Split train data
-gbm.trainX <- gbm.dataTrain[, gbm.dim.x, ]
-gbm.trainY <- as.factor(gbm.dataTrain[, dim.y, ])
-        
-#Split test data 
-gbm.testX <- gbm.dataTest[, gbm.dim.x, ]
-gbm.testY <- as.factor(gbm.dataTest[, dim.y, ])
+#dicionariza
+id2word = corpora.Dictionary(textolimpo)
+
+corpus = []
+for text in textolimpo:
+    new = id2word.doc2bow(text)
+    corpus.append(new)
+
+#treina o LDA
+from gensim.models.ldamulticore import LdaMulticore
+lda_model = LdaMulticore(corpus=corpus,
+                        id2word=id2word,
+                        num_topics=30, 
+                        random_state=100,
+                        chunksize=100,
+                        passes=10,
+                        per_word_topics=True,
+                        alpha = 0.9,
+                        )
+#salva o modelo
+lda_model.save('/content/drive/MyDrive/meu_lda')                        
+```                        
+                    
+
+### 6. Carregar o LDA
+
+lda_model = LdaMulticore.load('/content/drive/MyDrive/meu_lda')
+
+id2word = corpora.Dictionary(textolimpo)
+
+corpus = []
+for text in textolimpo:
+    new = id2word.doc2bow(text)
+    corpus.append(new)
+
+#mostra os vetores pra cada review
+train_vecs = []
+for i in range(len(textolimpo)):
+    top_topics = lda_model.get_document_topics(corpus[i], minimum_probability=0.0)
+    topic_vec = [top_topics[i][1] for i in range(30)]
+    train_vecs.append(topic_vec)
+#distribuicao dos 30 topicos para cada review
+
+
+
+l2 = []
+for i in range(1,31):
+  l2.append(str('topic.'+ str(i)))
+l2
+
+
+
+ldadf = pd.DataFrame(train_vecs)
+ldadf.columns = l2
+resultfinal = pd.concat([data, vetores, ldadf], axis=1, join='inner')
+resultfinal
+
+
+
+
+
+
+
+
+### 7. LIWC
+
+!pip install liwc
+parse, category_names = liwc.load_token_parser('/content/drive/MyDrive/LIWC2007_Portugues_win.dic')
+listatexto = textolimpo.tolist()
+textocounts = Counter(category for token in listatexto for category in parse(token))
+listaliwc = []
+for i in listatexto:
+  a = Counter(category for token in i for category in parse(token))
+  listaliwc.append(a)
+
+dfliwc = pd.DataFrame(listaliwc).fillna(0)
+resultfinal = pd.concat([data,vetores, ldadf, dfliwc], axis=1, join='inner')
+resultfinal
+
+### 8. Atributos de Metadados
+
+
+path2 = '/content/drive/MyDrive/Tese/Racing_json_rest_part_50.json'
+df2 = pd.read_json(path2)
+df3 = df2.rename(columns={'review' : 'Text(dirty)'})
+df4 = df3['Text(dirty)']
+df4.reset_index(drop=True, inplace=True)
+df2.rename(columns = {'voted_up':'Recommended'}, inplace = True)
+df5 = df2['Recommended']
+df5.reset_index(drop=True, inplace=True)
+resultfinal = pd.concat([df5,df4,data, vetores, ldadf, dfliwc], axis=1, join='inner')
+
+
+
+
+
+
+
+
+
+
+
+#trocando a variavel booleana por integral para depois colocar no algoritmo
+resultfinal["Recommended"].replace({True: 1, False: 0}, inplace=True)
+resultfinal["Helpful"].replace({True: 1, False: 0}, inplace=True)
+
+#cria uma coluna para o numero de sentenças de cada review
+resultfinal['n.sentences'] = resultfinal['Text(dirty)'].apply(sent_tokenize).tolist()
+resultfinal['n.sentences'] = resultfinal['n.sentences'].apply(len)
+
+#cria uma coluna com o numero total de palavras
+resultfinal['n.words'] = [len(x.split()) for x in resultfinal['Text(dirty)'].tolist()]
+
+#media do tamanho das sentenças
+def avg_sentence_len(text):
+  sentences = text.split(".") #split the text into a list of sentences.
+  words = text.split(" ") #split the input text into a list of separate words
+  if(sentences[len(sentences)-1]==""): #if the last value in sentences is an empty string
+    average_sentence_length = len(words) / len(sentences)-1
+  else:
+    average_sentence_length = len(words) / len(sentences)
+  return average_sentence_length #returning avg length of sentence
+
+#aplica a uma coluna
+resultfinal['avg.sentence.length'] = resultfinal['Text(dirty)'].apply(avg_sentence_len)
+
+#numero de exclamações
+def count_exclam(text):
+  count = 0;  
+  for i in text:
+    if i in ('!'):  
+        count = count + 1;  
+          
+  return count  
+
+resultfinal['n.exclamation'] = resultfinal['Text(dirty)'].apply(count_exclam)
+
+
+#numero de perguntas
+def nquestion(text):
+  a = len(re.findall(r'\?', text))
+  return a
+
+#aplicando
+resultfinal['n.question'] = resultfinal['Text(dirty)'].apply(nquestion)
+
+#proporcao de letras maiusculas
+def capital_letters(text):
+  try:
+    a = sum(1 for c in text if c.isupper())/len(text)*100
+  except ZeroDivisionError:
+    a = 0
+  return a
+
+#aplicando
+resultfinal['uppercase.ratio'] = resultfinal['Text(dirty)'].apply(capital_letters)
+
+
+
+
+
+
+
+#procuramos os valores maximos para cada atributo e dividimos a coluna por eles para que os valores fiquem na mesma grandeza
+max_value = resultfinal['n.sentences'].max()
+resultfinal['n.sentences'] = resultfinal['n.sentences'].div(max_value)
+max_value2 = resultfinal['n.words'].max()
+resultfinal['n.words'] = resultfinal['n.words'].div(max_value2)
+max_value3 = resultfinal['avg.sentence.length'].max()
+resultfinal['avg.sentence.length'] = resultfinal['avg.sentence.length'].div(max_value3)
+max_value4 = resultfinal['n.exclamation'].max()
+resultfinal['n.exclamation']= resultfinal['n.exclamation'].div(max_value4)
+max_value5 = resultfinal['n.question'].max()
+resultfinal['n.question'] = resultfinal['n.question'].div(max_value5)
+max_value6 = resultfinal['uppercase.ratio'].max()
+resultfinal['uppercase.ratio'] = resultfinal['uppercase.ratio'].div(max_value6)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ```
 
-### 7. Preprocess data
+### 9. Separando em features e target
 
-``` r
-#Remove columns with near zero variance
-nearZV <- nearZeroVar(gbm.trainX)
-if(length(nearZV) > 0){
-    gbm.trainX <- gbm.trainX[, -nearZV]
-    gbm.testX <- gbm.testX[, -nearZV]
-}
 
-#Preprocess training Data
-preObj <- preProcess(gbm.trainX, method = c("center", "scale"))
-gbm.trainX <- predict(preObj, gbm.trainX)
-        
-#Preprocess test Data
-preObj <- preProcess(gbm.testX, method = c("center", "scale"))
-gbm.testX <- predict(preObj, gbm.testX)
-```
+features= pd.DataFrame(resultfinal.drop(columns=['Text(dirty)', 'Text', 'Helpful']))
+target = pd.DataFrame(resultfinal['Helpful'])
 
-### 8. Train and build the model
 
-We will apply 10-fold crossvalidation to build the model. In our experiment, we have used more reliable evaluation metrics: F-score and AUC. We have employed a GBM (Gradient Boosting Machine) classifier.
 
-``` r
-#Control parameters 
-gbm.fitControl = trainControl(method="repeatedcv", #small size -> repeatedcv
-                              number=10, #10-fold cv
-                              repeats=3,
-                              returnResamp = "final",
-                              selectionFunction = "best",
-                              classProbs=TRUE, 
-                              summaryFunction=twoClassSummary,
-                              allowParallel = TRUE)
-#Train the model
-gbmFit <- train(gbm.trainX, gbm.trainY, method="gbm", metric="ROC", trControl=gbm.fitControl, verbose=F)
-```
 
-### 9. Evaluate the model
+### 10. Balanceamento
+#separa o treino e o teste
+X_train, X_test, y_train, y_test = train_test_split(features, target, random_state=0, test_size=0.2)
 
-``` r
-#Get evaluation score
-eval_score <- get_eval_score(gbmFit, gbm.trainX, gbm.trainY, gbm.testX, gbm.testY, score_thrsld, "GBM")
-#print(eval_score)
-```
+#realiza o under e oversampling para os dados ficarem balanceados
+smote_enn = SMOTEENN(random_state=0)
+X_train_res, y_train_res = smote_enn.fit_resample(X_train, y_train)
 
-We conducted a series of executions (10 times) from the steps 5-8 in model training and the testing process to make the results more accurate. The evaluation results are saved in a file in the Evaluation directory. The mean evaluation metrics are shown in the following table.
 
-``` r
-scoreFile <- paste0("Evaluation/SCORE_", genre,"_V50_R0.9.Rdata")
-load(scoreFile)
-final_eval_score <- sapply(Filter(is.numeric, comb.score), mean)
-```
+ax = y_train_res.value_counts().plot.pie(autopct='2%f')
+_ = ax.set_title("Combined_sampling")
 
-| Evaluation Metric | Training score | Test score |
-|-------------------|----------------|------------|
-| Accuracy          | 1              | 0.989      |
-| Precision         | 1              | 0.988      |
-| Recall            | 1              | 0.991      |
-| F1-score          | 1              | 0.989      |
-<!---
-``` r
-#Plot AUC curve
-test.pred <- predict(gbmFit, gbm.testX, type="prob")
-test.ref <- gbm.testY
-predob <- prediction(test.pred$Yes, test.ref)
-perf <- performance(predob, "tpr", "fpr")
-plot(perf)
-``
-![](README_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-17-1.png)
--->
 
-From the above evaluation result, we found our model performed very well to classify whether the reviews were helpful or not. All evaluation metrics are about 99% for test dataset.
+### 11. Treinar o modelo de Classificação
 
-<!---
-### 10. Model Validation: Compare with the null model
+model_gbm = GradientBoostingClassifier(n_estimators=600,
+                                       learning_rate=0.05,
+                                       max_depth=3,
+                                       subsample=0.5,
+                                       validation_fraction=0.1,
+                                       n_iter_no_change=20,
+                                       verbose=1)
+model_gbm.fit(X_train_res, y_train_res)
 
-One way of validating our model is to compare the model with the null model. We have a seperate script **gbm\_nullModel.R**. By executing this file we have the following resrults. Remember that in null model, all observations are predicted as the major class. In our case it is No.
 
-``` r
-#Confusion matrix of the null model from training dataset
-null.cmTrain <- as.table(array(c(1750, 0, 52, 0),dim=c(2,2), dimnames=list(c("No","Yes"),c("No","Yes"))))
-names(attributes(null.cmTrain)$dimnames) <- c("Reference","Prediction")
-print(null.cmTrain)
-```
 
-    ##          Prediction
-    ## Reference   No  Yes
-    ##       No  1750   52
-    ##       Yes    0    0
 
-``` r
-#Confusion matrix of the null model from test dataset
-null.cmTest <- as.table(array(c(437, 0, 12, 0),dim=c(2,2), dimnames=list(c("No","Yes"),c("No","Yes"))))
-names(attributes(null.cmTest)$dimnames) <- c("Reference","Prediction")
-print(null.cmTest)
-```
+model_prediction = model_gbm.predict(X_test)
 
-    ##          Prediction
-    ## Reference  No Yes
-    ##       No  437  12
-    ##       Yes   0   0
 
-| Evaluation Metric | Our model | Null model |
-|-------------------|-----------|------------|
-| Training Accuracy | 1         | 0.971      |
-| Test Accuracy     | 0.989     | 0.973      |
+print('accuracy %s' % accuracy_score(model_prediction, y_test))
+print(classification_report(y_test, model_prediction))
 
-From the above table, we can see that our model performed better than the null model.
--->
 
-### 10. What makes review helpful
 
-``` r
-#Important features
-gbmImp <- varImp(gbmFit, scale = TRUE)
-impFeatures <- gbmImp$importance
 
-#Sort by overall weight
-impFeatures <- impFeatures[order(-impFeatures$Overall), , drop = FALSE]
-head(impFeatures, 10)
-```
 
-    ##                    Overall
-    ## wv.698           100.00000
-    ## recommend         79.68782
-    ## topic.17          68.56388
-    ## wv.903            47.82878
-    ## wv.819            41.77297
-    ## wv.226            37.71184
-    ## wv.701            36.39785
-    ## wv.330            35.35896
-    ## wv.512            32.78374
-    ## n.content.remove  32.10252
+### 12. Treinar o modelo de Regressão
 
-Similar to the evaluation metrics, feature importance is also computed by averaging the weights of 10 executions and saved it in a file in the ImpFeatures directory. The plotting of feature importace is shown as follows.
+target_reg = df2['weighted_vote_score']
+#separa o treino e o teste
+X_train, X_test, y_train, y_test = train_test_split(features, target_reg, random_state=0, test_size=0.2)
 
-``` r
-#Load feature importace file
-load(paste0("ImpFeatures/Imp_FT_", genre,"_V50_R0.9.Rdata"))
+reg = GradientBoostingRegressor(n_estimators=600,
+                                       learning_rate=0.05,
+                                       max_depth=3,
+                                       subsample=0.5,
+                                       validation_fraction=0.1,
+                                       n_iter_no_change=20,
+                                       verbose=1)
+reg.fit(X_train, y_train)
 
-#Select top 20
-top_features <- feature.imp[1:20, ]
-top_features$feature <- factor(top_features$feature, levels=unique(top_features$feature))
-featurePlot <- ggplot(data=top_features, aes(x=feature, y=mean )) +
-  geom_bar(stat="identity", position=position_dodge(0.6), fill="steelblue", width=0.6) +
-  scale_x_discrete(limits = rev(levels(top_features$feature))) +
-  scale_y_continuous(breaks=c(seq(0,100,10))) +
-  xlab("Features") + ylab("Feature importance (Relative weight)") + # Set axis labels
-  theme_bw()+
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 
-#Horizontal bar plot
-featurePlot <- featurePlot + coord_flip()
-print(featurePlot)
-```
+rmse = mean_squared_error(y_test, reg.predict(X_test), squared = False)
+print("The Root mean squared error (RMSE) on test set: {:.4f}".format(rmse))
 
-![](README_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-21-1.png)
 
-We found that review helpfulness mostly depends on:
 
--   Metadata features
--   The hidden word embedding features (Word2Vec) and
--   LDA topic based features.
+
+
+### 13. Verificar a importância dos atributos
+
+feat_imp_class = pd.DataFrame(model_gbm.feature_importances_)
+feat_imp_reg = pd.DataFrame(reg.feature_importances_)
+
+
+feat_imp_class.nlargest(n=10, columns=[0])
+feat_imp_reg.nlargest(n=10, columns=[0])
+
+transposto = features.transpose()
+lista_index = [transposto.index]
+index_df = pd.DataFrame(lista_index)
+df_feat = index_df.transpose()
+df_valor_feat_class = pd.concat([feat_imp_class, df_feat], axis=1)
+df_valor_feat_class
+
+
+df_valor_feat_class.columns=['valor', 'feature'] #renomeando as colunas
+df_valor_feat_class
+df_valor_feat_class.nlargest(n=10, columns=['valor'])
+df_valor_feat_class.index.name= 'num_feat'
+classfeat = df_valor_feat_class.nlargest(n=10, columns=['valor'])
+classfeat
+sns.barplot(data=classfeat, x='valor', y='feature',)
