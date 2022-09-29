@@ -23,7 +23,7 @@ Explicação dos arquivos:
 
  -  **meu_lda:** Modelo de Latent Dirichlet Allocation (LDA) já treinado. Um modelo estatístico para a descoberta de tópicos abstratos. Blei DM, Ng AY, Jordan MI (2003)
 
- -  **LIWC:** Dicionário que contém palavras que revelam determinados sentimentos e opiniões (Balage Filho et al., 2013, Pennebaker et al., 2001)
+ -  **LIWC2007_Portugues_win%20(1).dic:** Dicionário que contém palavras que revelam determinados sentimentos e opiniões (Balage Filho et al., 2013, Pennebaker et al., 2001)
 
 How to reproduce the result:
 ----------------------------
