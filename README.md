@@ -17,7 +17,7 @@ Nossos Objetivos:
 Explicação dos arquivos:
 ------------------------
 
--   **reviews_filtradas.zip:** Contém mais de 230 mil comentários em Português Brasileiro retirados do site steam.com, após serem filtrados aqueles possuíam *3 votos ou mais*. Os comentários foram classificados e agrupados em 10 gêneros diferentes. Depois disso, foram dividos ao meio para que uma metade *(part_50)* fosse utilizada no treinamento dos vetores de documento (doc2vec) e a outra *(rest_part_50)* para o treino e teste do algoritmo. Dessa forma, neste arquivo .zip há um total de 10 diretórios cujos nomes se referem aos gêneros obtidos e que contêm 2 arquivos, *e.g.,* *Action_json_part_50* e *Action_json_rest_part_50*. Além disso, há também um diretório que contém as duas partes de todos os gêneros combinados.
+-   **reviews_filtradas.zip:** Contém mais de 230 mil comentários em Português Brasileiro retirados do site steam.com, após serem filtrados aqueles possuíam *3 votos ou mais*. Os comentários foram classificados e agrupados em 10 gêneros diferentes. Depois disso, foram dividos ao meio para que uma metade *(part_50)* fosse utilizada no treinamento dos vetores de documento (doc2vec) e a outra *(rest_part_50)* para o treino e teste do algoritmo. Dessa forma, neste arquivo .zip há um total de 10 diretórios cujos nomes se referem aos gêneros obtidos e que contêm 2 arquivos, *e.g.,* *Racing_json_part_50* e *Racing_json_rest_part_50*. Além disso, há também um diretório que contém as duas partes de todos os gêneros combinados.
 
 -   **meu_doc2vec:** Modelo de vetores de documentos doc2vec (Le e Mikolov, 2014) com 1000 dimensões já treinado utilizando metade do conjunto de dados. Trata-se de uma representação das sentenças dos comentários através de vetores que permite com que sentenças com significados semelhantes possuam representações semelhantes. Para uma explicação mais detalhada, recomenda-se a leitura de Lau e Balwdwin (2016).
 
@@ -33,10 +33,10 @@ Como reproduzir o resultado:
 -   Mova os arquivos para seu drive em <https://drive.google.com>. Certifique-se de movê-los para um caminho que você possa lembrar posteriormente.
 -   Inicie sua sessão em <https://colab.research.google.com>
 -   No canto superior esquerdo, clique em "arquivo" -> "abrir notebook" e procure ou faça o upload do notebook *predUtil_h05_Racing.ipynb* contido neste repositório do github.
--   Procure no código por caminhos como *path = '/content/drive/MyDrive/Action_json_part50.json'* e certifique-se de alterá-los para o local em que você depositou seus arquivos no drive anteriormente.
+-   Procure no código por caminhos como *path = '/content/drive/MyDrive/Racing_json_part50.json'* e certifique-se de alterá-los para o local em que você depositou seus arquivos no drive anteriormente.
 -  Execute o script
 
-Tutorial of model training and evaluation:
+Tutorial de treinamento e avaliação do modelo:
 ------------------------------------------
 
 On the steam store there are many game genres e.g. action, racing, survival, rpg etc. We have analysed top 10 game genres that are discussed and explained in the paper. In this case, we are investigating the helpfulness of Racing game genre and showing the process to reproduce its result. We have considered those reviews which have at least 50 votes. The following step by step explanation are from the script **gbm\_eval.R.**
