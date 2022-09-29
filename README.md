@@ -270,7 +270,7 @@ lda_model.save('/content/drive/MyDrive/meu_lda')
                     
 
 ### 6. Carregar o LDA
-
+``` r
 lda_model = LdaMulticore.load('/content/drive/MyDrive/meu_lda')
 
 id2word = corpora.Dictionary(textolimpo)
@@ -287,9 +287,9 @@ for i in range(len(textolimpo)):
     topic_vec = [top_topics[i][1] for i in range(30)]
     train_vecs.append(topic_vec)
 #distribuicao dos 30 topicos para cada review
+``` 
 
-
-
+``` r
 l2 = []
 for i in range(1,31):
   l2.append(str('topic.'+ str(i)))
@@ -301,7 +301,7 @@ ldadf = pd.DataFrame(train_vecs)
 ldadf.columns = l2
 resultfinal = pd.concat([data, vetores, ldadf], axis=1, join='inner')
 resultfinal
-
+``` 
 
 
 
@@ -311,6 +311,7 @@ resultfinal
 
 ### 7. LIWC
 
+``` r
 !pip install liwc
 parse, category_names = liwc.load_token_parser('/content/drive/MyDrive/LIWC2007_Portugues_win.dic')
 listatexto = textolimpo.tolist()
@@ -323,10 +324,11 @@ for i in listatexto:
 dfliwc = pd.DataFrame(listaliwc).fillna(0)
 resultfinal = pd.concat([data,vetores, ldadf, dfliwc], axis=1, join='inner')
 resultfinal
+``` 
 
 ### 8. Atributos de Metadados
 
-
+``` r
 path2 = '/content/drive/MyDrive/Tese/Racing_json_rest_part_50.json'
 df2 = pd.read_json(path2)
 df3 = df2.rename(columns={'review' : 'Text(dirty)'})
@@ -336,6 +338,7 @@ df2.rename(columns = {'voted_up':'Recommended'}, inplace = True)
 df5 = df2['Recommended']
 df5.reset_index(drop=True, inplace=True)
 resultfinal = pd.concat([df5,df4,data, vetores, ldadf, dfliwc], axis=1, join='inner')
+``` 
 
 
 
@@ -345,8 +348,7 @@ resultfinal = pd.concat([df5,df4,data, vetores, ldadf, dfliwc], axis=1, join='in
 
 
 
-
-
+``` r
 #trocando a variavel booleana por integral para depois colocar no algoritmo
 resultfinal["Recommended"].replace({True: 1, False: 0}, inplace=True)
 resultfinal["Helpful"].replace({True: 1, False: 0}, inplace=True)
@@ -401,13 +403,13 @@ def capital_letters(text):
 
 #aplicando
 resultfinal['uppercase.ratio'] = resultfinal['Text(dirty)'].apply(capital_letters)
+``` 
 
 
 
 
 
-
-
+``` r
 #procuramos os valores maximos para cada atributo e dividimos a coluna por eles para que os valores fiquem na mesma grandeza
 max_value = resultfinal['n.sentences'].max()
 resultfinal['n.sentences'] = resultfinal['n.sentences'].div(max_value)
@@ -421,6 +423,7 @@ max_value5 = resultfinal['n.question'].max()
 resultfinal['n.question'] = resultfinal['n.question'].div(max_value5)
 max_value6 = resultfinal['uppercase.ratio'].max()
 resultfinal['uppercase.ratio'] = resultfinal['uppercase.ratio'].div(max_value6)
+``` 
 
 
 
@@ -436,19 +439,19 @@ resultfinal['uppercase.ratio'] = resultfinal['uppercase.ratio'].div(max_value6)
 
 
 
-
-```
 
 ### 9. Separando em features e target
 
-
+``` r
 features= pd.DataFrame(resultfinal.drop(columns=['Text(dirty)', 'Text', 'Helpful']))
 target = pd.DataFrame(resultfinal['Helpful'])
-
+``` 
 
 
 
 ### 10. Balanceamento
+
+``` r
 #separa o treino e o teste
 X_train, X_test, y_train, y_test = train_test_split(features, target, random_state=0, test_size=0.2)
 
@@ -471,22 +474,21 @@ model_gbm = GradientBoostingClassifier(n_estimators=600,
                                        n_iter_no_change=20,
                                        verbose=1)
 model_gbm.fit(X_train_res, y_train_res)
+``` 
 
 
-
-
+``` r
 model_prediction = model_gbm.predict(X_test)
-
-
 print('accuracy %s' % accuracy_score(model_prediction, y_test))
 print(classification_report(y_test, model_prediction))
-
+``` 
 
 
 
 
 ### 12. Treinar o modelo de Regressão
 
+``` r
 target_reg = df2['weighted_vote_score']
 #separa o treino e o teste
 X_train, X_test, y_train, y_test = train_test_split(features, target_reg, random_state=0, test_size=0.2)
@@ -503,13 +505,14 @@ reg.fit(X_train, y_train)
 
 rmse = mean_squared_error(y_test, reg.predict(X_test), squared = False)
 print("The Root mean squared error (RMSE) on test set: {:.4f}".format(rmse))
-
+``` 
 
 
 
 
 ### 13. Verificar a importância dos atributos
 
+``` r
 feat_imp_class = pd.DataFrame(model_gbm.feature_importances_)
 feat_imp_reg = pd.DataFrame(reg.feature_importances_)
 
@@ -523,8 +526,8 @@ index_df = pd.DataFrame(lista_index)
 df_feat = index_df.transpose()
 df_valor_feat_class = pd.concat([feat_imp_class, df_feat], axis=1)
 df_valor_feat_class
-
-
+``` 
+``` r
 df_valor_feat_class.columns=['valor', 'feature'] #renomeando as colunas
 df_valor_feat_class
 df_valor_feat_class.nlargest(n=10, columns=['valor'])
@@ -532,3 +535,4 @@ df_valor_feat_class.index.name= 'num_feat'
 classfeat = df_valor_feat_class.nlargest(n=10, columns=['valor'])
 classfeat
 sns.barplot(data=classfeat, x='valor', y='feature',)
+``` 
