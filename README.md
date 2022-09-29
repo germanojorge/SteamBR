@@ -152,6 +152,9 @@ model_dbow = Doc2Vec.load(fname)
 path2 = '/content/drive/MyDrive/Tese/Racing_json_rest_part_50.json'
 df2 = pd.read_json(path2)
 ```
+
+Aqui vamos limpar o texto e normalizá-lo, colocando-o em minúsculo, excluindo números, pontuações e caracteres especiais.
+
 ``` r
 #preprocessamento
 def process_text(text):
@@ -172,6 +175,9 @@ def process_text(text):
 #transforma a coluna weighted vote score que era string em float para utilizar no algoritmo
 df2 = df2.astype({'weighted_vote_score': float}, errors='raise')
 ```
+
+Neste exemplo e no meu trabalho foram utilizados somente comentários com um score/threshold de utilidade maior do que 0.5
+
 ``` r
 #cria uma coluna de utilidade com score maior do que 0.5
 df2['Helpful'] = np.where(df2['weighted_vote_score'] > 0.5, True, False)
@@ -206,6 +212,9 @@ textolimpo
 
 textolimpo.reset_index(drop=True, inplace=True)
 ```
+o "textolimpo" remove as stopwords e tokeniza as sentenças.
+Em seguida, vamos criar as colunas com os vetores de cada sentença
+
 ``` r
 #cria uma lista contendo vetores inferidos a partir do doc2vec treinado
 a = []
@@ -224,10 +233,15 @@ l
 vetores.columns= l #transforma a lista de vetores em colunas no dataframe
 ```
 
+Olhando o que fizemos até agora:
 
 ``` r
 vetores
 ```
+
+![vetores](https://github.com/germanojorge/PrevendoUtilidadeComentarios/blob/main/public/vetores.JPG)
+
+
 
 ``` r
 dataframe = pd.DataFrame()
@@ -235,10 +249,11 @@ data.reset_index(drop=True, inplace=True) #tira o indice do dataframe criado ant
 resultfinal = pd.concat([data, vetores], axis=1, join='inner') #junta os dois dataframes
 ```
 
+Depois de juntar os dois dataframes:
 ```
 resultfinal
 ```
-
+![dataframe](https://github.com/germanojorge/PrevendoUtilidadeComentarios/blob/main/public/resultfinal.JPG)
 
 
 ### 5. Preparar o LDA
@@ -327,6 +342,7 @@ resultfinal
 ``` 
 
 ### 8. Atributos de Metadados
+Aqui estamos colocando colunas com o texto sujo apenas para referencia, e também renomeando algumas colunas.
 
 ``` r
 path2 = '/content/drive/MyDrive/Tese/Racing_json_rest_part_50.json'
@@ -339,14 +355,9 @@ df5 = df2['Recommended']
 df5.reset_index(drop=True, inplace=True)
 resultfinal = pd.concat([df5,df4,data, vetores, ldadf, dfliwc], axis=1, join='inner')
 ``` 
+A ultima linha juntou todos os dataframes que criamos até agora: os vetores, o LDA e o LIWC.
 
-
-
-
-
-
-
-
+- Em seguida, vamos preparar as varíaveis de metadados, criando uma coluna para cada
 
 ``` r
 #trocando a variavel booleana por integral para depois colocar no algoritmo
@@ -425,22 +436,22 @@ max_value6 = resultfinal['uppercase.ratio'].max()
 resultfinal['uppercase.ratio'] = resultfinal['uppercase.ratio'].div(max_value6)
 ``` 
 
+Este dataframe contém tudo o que fizemos até agora
+
+![resultsuperficie](https://github.com/germanojorge/PrevendoUtilidadeComentarios/blob/main/public/resultsuperficie.JPG)
 
 
 
 
+### 9. Quadro de atributos
+Vamos olhar melhor todos os atributos que extraímos:
+
+![features](https://github.com/germanojorge/PrevendoUtilidadeComentarios/blob/main/public/tabela_atributos.PNG)
 
 
 
 
-
-
-
-
-
-
-
-### 9. Separando em features e target
+### 10. Separando em features e target
 
 ``` r
 features= pd.DataFrame(resultfinal.drop(columns=['Text(dirty)', 'Text', 'Helpful']))
@@ -449,8 +460,8 @@ target = pd.DataFrame(resultfinal['Helpful'])
 
 
 
-### 10. Balanceamento
-
+### 11. Balanceamento
+Faremos o baleanceamento para as classes (útil ou não-útil) utilizando a técnica STOMENN
 ``` r
 #separa o treino e o teste
 X_train, X_test, y_train, y_test = train_test_split(features, target, random_state=0, test_size=0.2)
@@ -462,10 +473,11 @@ X_train_res, y_train_res = smote_enn.fit_resample(X_train, y_train)
 
 ax = y_train_res.value_counts().plot.pie(autopct='2%f')
 _ = ax.set_title("Combined_sampling")
+```
 
+### 12. Treinar o modelo de Classificação
 
-### 11. Treinar o modelo de Classificação
-
+```r
 model_gbm = GradientBoostingClassifier(n_estimators=600,
                                        learning_rate=0.05,
                                        max_depth=3,
@@ -482,11 +494,13 @@ model_prediction = model_gbm.predict(X_test)
 print('accuracy %s' % accuracy_score(model_prediction, y_test))
 print(classification_report(y_test, model_prediction))
 ``` 
+![classifc](https://github.com/germanojorge/PrevendoUtilidadeComentarios/blob/main/public/acc_class.JPG)
+
+> Nosso modelo atingiu uma acurácia de 84%, e previu corretamente a classe 1 em 91%
+```
 
 
-
-
-### 12. Treinar o modelo de Regressão
+### 13. Treinar o modelo de Regressão
 
 ``` r
 target_reg = df2['weighted_vote_score']
@@ -505,12 +519,15 @@ reg.fit(X_train, y_train)
 
 rmse = mean_squared_error(y_test, reg.predict(X_test), squared = False)
 print("The Root mean squared error (RMSE) on test set: {:.4f}".format(rmse))
-``` 
+```
+
+![reg](https://github.com/germanojorge/PrevendoUtilidadeComentarios/blob/main/public/rmse_reg.JPG)
+
+> A raiz do erro quadrático médio atingiu valores de 0.09.
 
 
 
-
-### 13. Verificar a importância dos atributos
+### 14. Verificar a importância dos atributos
 
 ``` r
 feat_imp_class = pd.DataFrame(model_gbm.feature_importances_)
