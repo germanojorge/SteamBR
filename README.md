@@ -28,13 +28,14 @@ Explicação dos arquivos:
 
 Como reproduzir o resultado:
 ----------------------------
-obs: Neste exemplo usaremos o Google Colab. Contudo, este procedimento pode ser reproduzido no Jupyter Notebooks com algumas alterações.
+    OBS: Neste exemplo usaremos o Google Colab. Contudo, este procedimento pode ser reproduzido no Jupyter Notebooks com algumas alterações.
 -   Baixe o repositório em <https://github.com/germanojorge/PrevendoUtilidadeComentarios>. Clique em "código" -> "download ZIP". Em seguida, descompacte-o.
 -   Mova os arquivos para seu drive em <https://drive.google.com>. Certifique-se de movê-los para um caminho que você possa lembrar posteriormente.
 -   Inicie sua sessão em <https://colab.research.google.com>
 -   No canto superior esquerdo, clique em "arquivo" -> "abrir notebook" e procure ou faça o upload do notebook *predUtil_h05_Racing.ipynb* contido neste repositório do github.
 -   Procure no código por caminhos como *path = '/content/drive/MyDrive/Action_json_part50.json'* e certifique-se de alterá-los para o local em que você depositou seus arquivos no drive anteriormente.
 -  Execute o script
+
 Tutorial of model training and evaluation:
 ------------------------------------------
 
