@@ -19,10 +19,11 @@ Explicação dos arquivos:
 
 -   **reviews_filtradas.zip:** Contém mais de 230 mil comentários em Português Brasileiro retirados do site steam.com, após serem filtrados aqueles possuíam *3 votos ou mais*. Os comentários foram classificados e agrupados em 10 gêneros diferentes. Depois disso, foram dividos ao meio para que uma metade *(part_50)* fosse utilizada no treinamento dos vetores de documento (doc2vec) e a outra *(rest_part_50)* para o treino e teste do algoritmo. Dessa forma, neste arquivo .zip há um total de 10 diretórios cujos nomes se referem aos gêneros obtidos e que contêm 2 arquivos, *e.g.,* *Action_json_part_50* e *Action_json_rest_part_50*. Além disso, há também um diretório que contém as duas partes de todos os gêneros combinados.
 
--   **gbm\_eval.R:** In our experiment, we employed a GBM (Gradient Boosting Machine) classifier for model training and evaluation. Before applying GBM to train the model, we investigated our dataset and found it imbalanced. To combat this imbalanced dataset, we applied a number of options discussed step by step in later sections.
-<!---
--   **gbm\_nullModel.R:** For binary classification a null model is built to compare the model performance. In our experiment, we designed a null model that predicted all observation to majority class.
--->
+-   **meu_doc2vec:** Modelo de vetores de documentos doc2vec (Le e Mikolov, 2014) com 1000 dimensões já treinado utilizando metade do conjunto de dados. Trata-se de uma representação das sentenças dos comentários através de vetores que permite com que sentenças com significados semelhantes possuam representações semelhantes. Para uma explicação mais detalhada, recomenda-se a leitura de Lau e Balwdwin (2016).
+
+ -  **meu_lda:** Modelo de Latent Dirichlet Allocation (LDA) já treinado. Um modelo estatístico para a descoberta de tópicos abstratos. Blei DM, Ng AY, Jordan MI (2003)
+
+ -  **LIWC:** Dicionário que contém palavras que revelam determinados sentimentos e opiniões (Balage Filho et al., 2013, Pennebaker et al., 2001)
 
 How to reproduce the result:
 ----------------------------
