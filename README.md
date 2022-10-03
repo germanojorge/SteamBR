@@ -102,7 +102,7 @@ from sklearn.metrics import mean_squared_error
 import matplotlib.pyplot as plt
 import seaborn as sns
 ```
-Clique em "aceitar" para e coloque suas credencias para montar o seu drive.
+Clique em "aceitar" e coloque suas credencias para montar o seu drive.
 
 ### 2. Preparar o Doc2Vec
 
