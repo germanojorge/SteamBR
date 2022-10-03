@@ -4,6 +4,8 @@ Germano Antonio Zani Jorge
 
 Instituto de Ciências Matemáticas e Computação, Universidade de São Paulo, Brasil.
 
+e-mail: germano.jorge@alumni.usp.br
+
 Nossos Objetivos:
 ---------
 
