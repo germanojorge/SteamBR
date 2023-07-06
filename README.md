@@ -5,7 +5,18 @@ Germano Antonio Zani Jorge
 Instituto de Ciências Matemáticas e Computação, Universidade de São Paulo, Brasil.
 
 e-mail: germano.jorge@alumni.usp.br
-
+-------------
+Citação:
+Por favor, não se esqueça de citar o trabalho caso utilize-o:
+-----------------
+```
+@article{jorge2023steambr,
+  title={SteamBR: a dataset for game reviews and evaluation of a state-of-the-art method for helpfulness prediction},
+  author={Jorge, Germano Antonio Zani and Pardo, Thiago Alexandre Salgueiro},
+  journal={Anais},
+  year={2023}
+}
+````
 Nossos Objetivos:
 ---------
 
