@@ -68,7 +68,7 @@ Explicação dos arquivos:
 Como reproduzir o resultado:
 ----------------------------
     OBS: Neste exemplo usaremos o Google Colab. Contudo, este procedimento pode ser reproduzido no Jupyter Notebooks com algumas alterações.
--   Baixe o repositório em <https://github.com/germanojorge/PrevendoUtilidadeComentarios>. Clique em "código" -> "download ZIP". Em seguida, descompacte-o.
+-   Baixe os dados pelos link do drive acima.
 -   Mova os arquivos para seu drive em <https://drive.google.com>. Certifique-se de movê-los para um caminho que você possa lembrar posteriormente.
 -   Inicie sua sessão em <https://colab.research.google.com>
 -   No canto superior esquerdo, clique em "arquivo" -> "abrir notebook" e procure ou faça o upload do notebook *predUtil_h05_Racing.ipynb* contido neste repositório do github.
