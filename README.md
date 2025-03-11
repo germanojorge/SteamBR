@@ -41,7 +41,6 @@ Ferramentas Utilizadas:
 - Seaborn
 
 ## Dados:
-----------
 Utilize os links para realizar o download do conjunto de dados e arquivos de suporte:
 - **SteamBR corpus** [(https://drive.google.com/drive/folders/1TZynwUnYpKLOAGFmGnZkpuFtBpCgPKZx?usp=sharing)](https://drive.google.com/file/d/1aXolQJoZMC4Lt6LEyGofbvvGOxBR2Z4i/view?usp=drive_link)
 - **reviews_filtradas** (https://drive.google.com/file/d/1tx_v1f3-SkfyC7tmVVW5wGBIAyPNNoDg/view?usp=drive_link)
