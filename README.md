@@ -40,6 +40,15 @@ Ferramentas Utilizadas:
 - Matplotlib
 - Seaborn
 
+## Dados:
+----------
+Utilize os links para realizar o download do conjunto de dados e arquivos de suporte:
+- **SteamBR corpus** [(https://drive.google.com/drive/folders/1TZynwUnYpKLOAGFmGnZkpuFtBpCgPKZx?usp=sharing)](https://drive.google.com/file/d/1aXolQJoZMC4Lt6LEyGofbvvGOxBR2Z4i/view?usp=drive_link)
+- **reviews_filtradas** (https://drive.google.com/file/d/1tx_v1f3-SkfyC7tmVVW5wGBIAyPNNoDg/view?usp=drive_link)
+- **meu_doc2vec** (https://drive.google.com/file/d/1bDS7Y3IX7irZP8Zz-7PHW1h2HQr6jeEV/view?usp=drive_link)
+- **meu_lda** (https://drive.google.com/file/d/1Ox_qksC1pLmISYPYhCivG1ZvysmWyOPB/view?usp=drive_link)
+
+
 
 Explicação dos arquivos:
 ------------------------
