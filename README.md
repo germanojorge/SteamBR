@@ -1,12 +1,13 @@
-Prevendo a Utilidade de Comentários de Jogos em Português Brasileiro no Site Steam
-================
+# Artigo original: [**SteamBR: a dataset for game reviews and evaluation of a state-of-the-art method for helpfulness prediction**](https://sol.sbc.org.br/index.php/brasnam/article/view/24801/24622)
+
+
 Germano Antonio Zani Jorge
 
 Instituto de Ciências Matemáticas e Computação, Universidade de São Paulo, Brasil.
 
 e-mail: germano.jorge@alumni.usp.br
 -------------
-# Artigo original: [**SteamBR: a dataset for game reviews and evaluation of a state-of-the-art method for helpfulness prediction**](https://sol.sbc.org.br/index.php/brasnam/article/view/24801/24622)
+
 
 
 
