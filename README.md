@@ -6,6 +6,10 @@ Instituto de Ciências Matemáticas e Computação, Universidade de São Paulo, 
 
 e-mail: germano.jorge@alumni.usp.br
 -------------
+# Artigo original: [**SteamBR: a dataset for game reviews and evaluation of a state-of-the-art method for helpfulness prediction**](https://sol.sbc.org.br/index.php/brasnam/article/view/24801/24622)
+
+
+
 Citação:
 Por favor, não se esqueça de citar o trabalho caso utilize-o:
 -----------------
